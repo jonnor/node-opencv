@@ -62,6 +62,7 @@ public:
   JSFUNC(GaussianBlur)
   JSFUNC(MedianBlur)
   JSFUNC(BilateralFilter)
+  JSFUNC(ReduceColorsKmeans)
   JSFUNC(Sobel)
   JSFUNC(Copy)
   JSFUNC(Flip)

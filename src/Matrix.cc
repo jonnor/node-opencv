@@ -59,6 +59,7 @@ void Matrix::Init(Local<Object> target) {
   Nan::SetPrototypeMethod(ctor, "gaussianBlur", GaussianBlur);
   Nan::SetPrototypeMethod(ctor, "medianBlur", MedianBlur);
   Nan::SetPrototypeMethod(ctor, "bilateralFilter", BilateralFilter);
+  Nan::SetPrototypeMethod(ctor, "reduceColorsKmeans", ReduceColorsKmeans);
   Nan::SetPrototypeMethod(ctor, "sobel", Sobel);
   Nan::SetPrototypeMethod(ctor, "copy", Copy);
   Nan::SetPrototypeMethod(ctor, "flip", Flip);
@@ -1168,6 +1169,44 @@ NAN_METHOD(Matrix::BilateralFilter) {
 
   cv::bilateralFilter(self->mat, filtered, d, sigmaColor, sigmaSpace, borderType);
   filtered.copyTo(self->mat);
+
+  info.GetReturnValue().Set(Nan::Null());
+}
+
+// http://stackoverflow.com/a/34734939/5008845
+void reduceColor_kmeans(const cv::Mat3b& src, cv::Mat3b& dst, int K)
+{
+    const int n = src.rows * src.cols;
+    cv::Mat data = src.reshape(1, n);
+    data.convertTo(data, CV_32F);
+
+    std::vector<int> labels;
+    cv::Mat1f colors;
+    kmeans(data, K, labels, cv::TermCriteria(), 1, cv::KMEANS_PP_CENTERS, colors);
+
+    for (int i = 0; i < n; ++i)
+    {
+        data.at<float>(i, 0) = colors(labels[i], 0);
+        data.at<float>(i, 1) = colors(labels[i], 1);
+        data.at<float>(i, 2) = colors(labels[i], 2);
+    }
+
+    cv::Mat reduced = data.reshape(3, src.rows);
+    reduced.convertTo(dst, CV_8U);
+}
+
+NAN_METHOD(Matrix::ReduceColorsKmeans) {
+  Nan::HandleScope scope;
+  Matrix *self = Nan::ObjectWrap::Unwrap<Matrix>(info.This());
+
+  int K = 16;
+  if (info.Length() > 0) {
+      K = info[0]->IntegerValue();
+  }
+
+  cv::Mat3b reduced;
+  reduceColor_kmeans(self->mat, reduced, K);
+  reduced.copyTo(self->mat);
 
   info.GetReturnValue().Set(Nan::Null());
 }
