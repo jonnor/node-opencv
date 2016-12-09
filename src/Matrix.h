@@ -130,6 +130,8 @@ public:
   JSFUNC(Release)
 
   JSFUNC(Subtract)
+  JSFUNC(Divide)
+  JSFUNC(Multiply)
   /*
    static Handle<Value> Val(const Arguments& info);
    static Handle<Value> RowRange(const Arguments& info);

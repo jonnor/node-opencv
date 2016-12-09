@@ -113,6 +113,8 @@ void Matrix::Init(Local<Object> target) {
   Nan::SetPrototypeMethod(ctor, "reshape", Reshape);
   Nan::SetPrototypeMethod(ctor, "release", Release);
   Nan::SetPrototypeMethod(ctor, "subtract", Subtract);
+  Nan::SetPrototypeMethod(ctor, "divide", Divide);
+  Nan::SetPrototypeMethod(ctor, "multiply", Multiply);
 
   target->Set(Nan::New("Matrix").ToLocalChecked(), ctor->GetFunction());
 };
@@ -2678,6 +2680,40 @@ NAN_METHOD(Matrix::Subtract) {
   Matrix *other = Nan::ObjectWrap::Unwrap<Matrix>(info[0]->ToObject());
 
   self->mat -= other->mat;
+
+  return;
+}
+
+NAN_METHOD(Matrix::Divide) {
+  SETUP_FUNCTION(Matrix)
+
+  if (info.Length() < 1) {
+    Nan::ThrowTypeError("Invalid number of arguments. Expected 1 number or Matrix");
+  }
+
+  if (info[0]->IsNumber()) {
+    self->mat /= info[0]->NumberValue();
+  } else {
+    Matrix *other = Nan::ObjectWrap::Unwrap<Matrix>(info[0]->ToObject());
+    self->mat /= other->mat;
+  }
+
+  return;
+}
+
+NAN_METHOD(Matrix::Multiply) {
+  SETUP_FUNCTION(Matrix)
+
+  if (info.Length() < 1) {
+    Nan::ThrowTypeError("Invalid number of arguments. Expected 1 number or Matrix");
+  }
+
+  if (info[0]->IsNumber()) {
+    self->mat *= info[0]->NumberValue();
+  } else {
+    Matrix *other = Nan::ObjectWrap::Unwrap<Matrix>(info[0]->ToObject());
+    self->mat *= other->mat;
+  }
 
   return;
 }
