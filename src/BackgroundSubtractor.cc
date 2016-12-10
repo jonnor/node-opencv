@@ -104,37 +104,26 @@ NAN_METHOD(BackgroundSubtractorWrap::ApplyMOG) {
   }
 
   try {
-    Local<Object> fgMask =
-        Nan::New(Matrix::constructor)->GetFunction()->NewInstance();
-    Matrix *img = Nan::ObjectWrap::Unwrap<Matrix>(fgMask);
-
-    cv::Mat mat;
-    if (Buffer::HasInstance(info[0])) {
-      uint8_t *buf = (uint8_t *) Buffer::Data(info[0]->ToObject());
-      unsigned len = Buffer::Length(info[0]->ToObject());
-      cv::Mat *mbuf = new cv::Mat(len, 1, CV_64FC1, buf);
-      mat = cv::imdecode(*mbuf, -1);
-      //mbuf->release();
-    } else {
-      Matrix *_img = Nan::ObjectWrap::Unwrap<Matrix>(info[0]->ToObject());
-      mat = (_img->mat).clone();
-    }
-
-    if (mat.empty()) {
+    Matrix *input = Nan::ObjectWrap::Unwrap<Matrix>(info[0]->ToObject());
+    if (input->mat.empty()) {
       return Nan::ThrowTypeError("Error loading file");
     }
 
-    cv::Mat _fgMask;
+    cv::Mat in = input->mat.clone();
+
+    cv::Mat maskMat;
 #if CV_MAJOR_VERSION >= 3
-    self->subtractor->apply(mat, _fgMask);
+    self->subtractor->apply(in, maskMat);
 #else
-    self->subtractor->operator()(mat, _fgMask);
+    self->subtractor->operator()(in, maskMat);
 #endif
-    img->mat = _fgMask;
-    mat.release();
+
+    Local<Object> mask = Nan::New(Matrix::constructor)->GetFunction()->NewInstance();
+    Matrix *ret = Nan::ObjectWrap::Unwrap<Matrix>(mask);
+    ret->mat = maskMat.clone();
 
     argv[0] = Nan::Null();
-    argv[1] = fgMask;
+    argv[1] = mask;
 
     Nan::TryCatch try_catch;
     cb->Call(Nan::GetCurrentContext()->Global(), 2, argv);
